@@ -1,2 +1,2 @@
-# ucl_msc_project
-The complementary Jupyter Notebook for the paper titled "Generating Uniform Random Variables from Atmospheric Noise""
+# Generating Uniform Random Variables from Atmospheric Noise
+A complementary repository for the dissertation of the same name by Kirushanth Srithararajah
