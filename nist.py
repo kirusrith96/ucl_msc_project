@@ -1,41 +1,22 @@
-from math import log as log
-from math import fabs as fabs
-from math import floor as floor
-from math import sqrt as sqrt
-from math import log as log
-from math import isnan as isnan
-from math import comb
+import math
 import numpy as np
-from numpy.linalg import matrix_rank
-from numpy import zeros as zeros
-from numpy import array as array
-from numpy import append as append
-from numpy import exp as exp
-from numpy import where as where
-from numpy import dot as dot
-from numpy import clip as clip
-from numpy import cumsum as cumsum
-from numpy import ones as ones
-from numpy import transpose as transpose
-from numpy import histogram as histogram
-from numpy import sum as np_sum
 from scipy import fftpack as sff
 from scipy.special import erfc as erfc
 from scipy.special import gammaincc as gammaincc
 from scipy.special import hyp1f1 as hyp1f1
 from scipy.stats import norm as norm
 from copy import copy as copy
-    
+
 class nist:
-    
+
     def __init__(self, a=0.01):
         """
         This is used to define the significance of the test. Default is set to 99%.
         """
         self.alpha = a
         print('Significance level set to {0}'.format(1-self.alpha))
-        
-    
+
+
     def monobit_test(self, binary_data, verbose=False):
         """
         The focus of the test is the proportion of zeroes and ones for the entire sequence.
@@ -64,10 +45,10 @@ class nist:
                 count += 1
 
         # Compute the test statistic
-        sObs = count / sqrt(length_of_bit_string)
+        sObs = count / math.sqrt(length_of_bit_string)
 
         # Compute p-Value
-        p_value = erfc(fabs(sObs) / sqrt(2))
+        p_value = erfc(math.fabs(sObs) / math.sqrt(2))
 
         if verbose:
             print('Frequency Test (Monobit Test) DEBUG BEGIN:')
@@ -76,13 +57,13 @@ class nist:
             print('\t# of \'1\':\t\t\t', binary_data.count('1'))
             print('\tS(n):\t\t\t\t', count)
             print('\tsObs:\t\t\t\t', sObs)
-            print('\tf:\t\t\t\t\t',fabs(sObs) / sqrt(2))
+            print('\tf:\t\t\t\t\t',math.fabs(sObs) / math.sqrt(2))
             print('\tP-Value:\t\t\t', p_value)
             print('DEBUG END.')
-            
+
         # return a p_value and randomness result
         return (p_value, (p_value >= self.alpha))
-    
+
     def block_frequency(self, binary_data:str, block_size=128, verbose=False):
         """
         The focus of the test is the proportion of ones within M-bit blocks.
@@ -102,7 +83,7 @@ class nist:
             block_size = length_of_bit_string
 
         # Compute the number of blocks based on the input given.  Discard the remainder
-        number_of_blocks = floor(length_of_bit_string / block_size)
+        number_of_blocks = math.floor(length_of_bit_string / block_size)
 
         if number_of_blocks == 1:
             # For block size M=1, this test degenerates to test 1, the Frequency (Monobit) test.
@@ -177,8 +158,8 @@ class nist:
             max_pattern += '1'
 
         # Keep track of each pattern's frequency (how often it appears)
-        vobs_01 = zeros(int(max_pattern[0:pattern_length:], 2) + 1)
-        vobs_02 = zeros(int(max_pattern[0:pattern_length + 1:], 2) + 1)
+        vobs_01 = np.zeros(int(max_pattern[0:pattern_length:], 2) + 1)
+        vobs_02 = np.zeros(int(max_pattern[0:pattern_length + 1:], 2) + 1)
 
         for i in range(length_of_binary_data):
             # Work out what pattern is observed
@@ -188,15 +169,15 @@ class nist:
         # Calculate the test statistics and p values
         vobs = [vobs_01, vobs_02]
 
-        sums = zeros(2)
+        sums = np.zeros(2)
         for i in range(2):
             for j in range(len(vobs[i])):
                 if vobs[i][j] > 0:
-                    sums[i] += vobs[i][j] * log(vobs[i][j] / length_of_binary_data)
+                    sums[i] += vobs[i][j] * math.log(vobs[i][j] / length_of_binary_data)
         sums /= length_of_binary_data
         ape = sums[0] - sums[1]
 
-        xObs = 2.0 * length_of_binary_data * (log(2) - ape)
+        xObs = 2.0 * length_of_binary_data * (math.log(2) - ape)
 
         p_value = gammaincc(pow(2, pattern_length - 1), xObs / 2.0)
 
@@ -210,7 +191,7 @@ class nist:
             print('DEBUG END.')
 
         return (p_value, (p_value >= self.alpha))
-    
+
     def run_test(self, binary_data:str, verbose=False):
         """
         The focus of this test is the total number of runs in the sequence,
@@ -228,9 +209,9 @@ class nist:
         vObs = 0
         length_of_binary_data = len(binary_data)
 
-        # Predefined tau = 2 / sqrt(n)
+        # Predefined tau = 2 / math.sqrt(n)
         # TODO Confirm with Frank about the discrepancy between the formula and the sample of 2.3.8
-        tau = 2 / sqrt(length_of_binary_data)
+        tau = 2 / math.sqrt(length_of_binary_data)
 
         # Step 1 - Compute the pre-test proportion πof ones in the input sequence: π = Σjεj / n
         one_count = binary_data.count('1')
@@ -249,13 +230,13 @@ class nist:
                     vObs += 1
             vObs += 1
 
-            # Step 4 - Compute p_value = erfc((|vObs − 2nπ * (1−π)|)/(2 * sqrt(2n) * π * (1−π)))
-            p_value = erfc(abs(vObs - (2 * (length_of_binary_data) * pi * (1 - pi))) / (2 * sqrt(2 * length_of_binary_data) * pi * (1 - pi)))
+            # Step 4 - Compute p_value = erfc((|vObs − 2nπ * (1−π)|)/(2 * math.sqrt(2n) * π * (1−π)))
+            p_value = erfc(abs(vObs - (2 * (length_of_binary_data) * pi * (1 - pi))) / (2 * math.sqrt(2 * length_of_binary_data) * pi * (1 - pi)))
 
         if verbose:
             print('Run Test DEBUG BEGIN:')
             print("\tLength of input:\t\t\t\t", length_of_binary_data)
-            print("\tTau (2/sqrt(length of input)):\t", tau)
+            print("\tTau (2/math.sqrt(length of input)):\t", tau)
             print('\t# of \'1\':\t\t\t\t\t\t', one_count)
             print('\t# of \'0\':\t\t\t\t\t\t', binary_data.count('0'))
             print('\tPI (1 count / length of input):\t', pi)
@@ -264,7 +245,7 @@ class nist:
             print('DEBUG END.')
 
         return (p_value, (p_value >= self.alpha))
-    
+
     def longest_one_block_test(self, binary_data:str, verbose=False):
         """
         The focus of the test is the longest run of ones within M-bit blocks. The purpose of this test is to determine
@@ -299,13 +280,13 @@ class nist:
             m = 10000
             v_values = [10, 11, 12, 13, 14, 15, 16]
             pi_values = [0.0882, 0.2092, 0.2483, 0.1933, 0.1208, 0.0675, 0.0727]
-        
-        number_of_blocks = floor(length_of_binary_data / m)
+
+        number_of_blocks = math.floor(length_of_binary_data / m)
         block_start = 0
         block_end = m
         xObs = 0
         # This will intialized an array with a number of 0 you specified.
-        frequencies = zeros(k + 1)
+        frequencies = np.zeros(k + 1)
 
         # print('Number of Blocks: ', number_of_blocks)
 
@@ -359,7 +340,7 @@ class nist:
             print('DEBUG END.')
 
         return (p_value, (p_value >= self.alpha))
-    
+
     def spectral_test(self, binary_data:str, verbose=False):
         """
         Note that this description is taken from the NIST documentation [1]
@@ -390,25 +371,25 @@ class nist:
 
         # Step 3 - Calculate M = modulus(S´) ≡ |S'|, where S´ is the substring consisting of the first n/2
         # elements in S, and the modulus function produces a sequence of peak heights.
-        slice = floor(length_of_binary_data / 2)
+        slice = math.floor(length_of_binary_data / 2)
         modulus = abs(spectral[0:slice])
 
-        # Step 4 - Compute T = sqrt(log(1 / 0.05) * length_of_string) the 95 % peak height threshold value.
+        # Step 4 - Compute T = math.sqrt(log(1 / 0.05) * length_of_string) the 95 % peak height threshold value.
         # Under an assumption of randomness, 95 % of the values obtained from the test should not exceed T.
-        tau = sqrt(log(1 / 0.05) * length_of_binary_data)
+        tau = math.sqrt(math.log(1 / 0.05) * length_of_binary_data)
 
         # Step 5 - Compute N0 = .95n/2. N0 is the expected theoretical (95 %) number of peaks
         # (under the assumption of randomness) that are less than T.
         n0 = 0.95 * (length_of_binary_data / 2)
 
         # Step 6 - Compute N1 = the actual observed number of peaks in M that are less than T.
-        n1 = len(where(modulus < tau)[0])
+        n1 = len(np.where(modulus < tau)[0])
 
-        # Step 7 - Compute d = (n_1 - n_0) / sqrt (length_of_string * (0.95) * (0.05) / 4)
-        d = (n1 - n0) / sqrt(length_of_binary_data * (0.95) * (0.05) / 4)
+        # Step 7 - Compute d = (n_1 - n_0) / math.sqrt (length_of_string * (0.95) * (0.05) / 4)
+        d = (n1 - n0) / math.sqrt(length_of_binary_data * (0.95) * (0.05) / 4)
 
-        # Step 8 - Compute p_value = erfc(abs(d)/sqrt(2))
-        p_value = erfc(fabs(d) / sqrt(2))
+        # Step 8 - Compute p_value = erfc(abs(d)/math.sqrt(2))
+        p_value = erfc(math.fabs(d) / math.sqrt(2))
 
         if verbose:
             print('Discrete Fourier Transform (Spectral) Test DEBUG BEGIN:')
@@ -421,7 +402,7 @@ class nist:
             print('DEBUG END.')
 
         return (p_value, (p_value >= self.alpha))
-    
+
     def non_overlapping_test(self, binary_data:str, verbose=False, template_pattern='000000001', block=8):
         """
         Note that this description is taken from the NIST documentation [1]
@@ -440,8 +421,8 @@ class nist:
 
         length_of_binary = len(binary_data)
         pattern_size = len(template_pattern)
-        block_size = floor(length_of_binary / block)
-        pattern_counts = zeros(block)
+        block_size = math.floor(length_of_binary / block)
+        pattern_counts = np.zeros(block)
         # combine the values into 1 string
         binary_data = ''.join(binary_data)
         # For each block in the data
@@ -458,7 +439,7 @@ class nist:
                     inner_count += pattern_size
                 else:
                     inner_count += 1
-        
+
             # Calculate the theoretical mean and variance
             # Mean - µ = (M-m+1)/2m
             mean = (block_size - pattern_size + 1) / pow(2, pattern_size)
@@ -505,7 +486,7 @@ class nist:
         for count in range(pattern_size):
             pattern += '1'
 
-        number_of_block = floor(length_of_binary_data / block_size)
+        number_of_block = math.floor(length_of_binary_data / block_size)
 
         # λ = (M-m+1)/pow(2, m)
         lambda_val = float(block_size - pattern_size + 1) / pow(2, pattern_size)
@@ -513,13 +494,13 @@ class nist:
         eta = lambda_val / 2.0
 
         pi = [nist.get_prob(i, eta) for i in range(5)]
-        diff = float(array(pi).sum())
+        diff = float(np.array(pi).sum())
         pi.append(1.0 - diff)
-        
+
         # combine the values into 1 string
         binary_data = ''.join(binary_data)
-        
-        pattern_counts = zeros(6)
+
+        pattern_counts = np.zeros(6)
         for i in range(number_of_block):
             block_start = i * block_size
             block_end = block_start + block_size
@@ -553,12 +534,12 @@ class nist:
 
 
         return (p_value, (p_value >= self.alpha))
-    
+
     @staticmethod
     def get_prob(u, x):
-        out = 1.0 * exp(-x)
+        out = 1.0 * np.exp(-x)
         if u != 0:
-            out = 1.0 * x * exp(2 * -x) * (2 ** -u) * hyp1f1(u + 1, 2, x)
+            out = 1.0 * x * np.exp(2 * -x) * (2 ** -u) * hyp1f1(u + 1, 2, x)
         return out
 
     def statistical_test(self, binary_data:str, verbose=False):
@@ -598,7 +579,7 @@ class nist:
             pattern_size = 15
         if length_of_binary_data >= 1059061760:
             pattern_size = 16
-        
+
         if 5 < pattern_size < 16:
             # Create the biggest binary string of length pattern_size
             ones = ""
@@ -607,10 +588,10 @@ class nist:
 
             # How long the state list should be
             num_ints = int(ones, 2)
-            vobs = zeros(num_ints + 1)
+            vobs = np.zeros(num_ints + 1)
 
             # Keeps track of the blocks, and whether were are initializing or summing
-            num_blocks = floor(length_of_binary_data / pattern_size)
+            num_blocks = math.floor(length_of_binary_data / pattern_size)
             # Q = 10 * pow(2, pattern_size)
             init_bits = 10 * pow(2, pattern_size)
 
@@ -621,7 +602,7 @@ class nist:
             variance = [0, 0, 0, 0, 0, 0, 2.954, 3.125, 3.238, 3.311, 3.356, 3.384, 3.401, 3.410, 3.416, 3.419, 3.421]
             expected = [0, 0, 0, 0, 0, 0, 5.2177052, 6.1962507, 7.1836656, 8.1764248, 9.1723243,
                         10.170032, 11.168765, 12.168070, 13.167693, 14.167488, 15.167379]
-            sigma = c * sqrt(variance[pattern_size] / test_bits)
+            sigma = c * math.sqrt(variance[pattern_size] / test_bits)
 
             cumsum = 0.0
             # Examine each of the K blocks in the test segment and determine the number of blocks since the
@@ -641,11 +622,11 @@ class nist:
                 else:
                     initial = vobs[int_rep]
                     vobs[int_rep] = i + 1
-                    cumsum += log(i - initial + 1, 2)
+                    cumsum += math.log(i - initial + 1, 2)
 
             # Compute the statistic
             phi = float(cumsum / test_bits)
-            stat = abs(phi - expected[pattern_size]) / (float(sqrt(2)) * sigma)
+            stat = abs(phi - expected[pattern_size]) / (float(math.sqrt(2)) * sigma)
 
             # Compute for P-Value
             p_value = erfc(stat)
@@ -662,7 +643,7 @@ class nist:
             return (p_value, (p_value >= self.alpha))
         else:
             return (-1.0, False)
-        
+
     def linear_complexity_test(self, binary_data:str, verbose=False, block_size=500):
         """
         Note that this description is taken from the NIST documentation [1]
@@ -705,7 +686,7 @@ class nist:
                 complexities.append(nist.berlekamp_massey_algorithm(block))
 
             t = ([-1.0 * (((-1) ** block_size) * (chunk - mean) + 2.0 / 9) for chunk in complexities])
-            vg = histogram(t, bins=[-9999999999, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 9999999999])[0][::-1]
+            vg = np.histogram(t, bins=[-9999999999, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 9999999999])[0][::-1]
             im = ([((vg[ii] - number_of_block * pi[ii]) ** 2) / (number_of_block * pi[ii]) for ii in range(7)])
 
             xObs = 0.0
@@ -744,8 +725,8 @@ class nist:
         :return:
         """
         n = len(block_data)
-        c = zeros(n)
-        b = zeros(n)
+        c = np.zeros(n)
+        b = np.zeros(n)
         c[0], b[0] = 1, 1
         l, m, i = 0, -1, 0
         int_data = [int(el) for el in block_data]
@@ -753,10 +734,10 @@ class nist:
             v = int_data[(i - l):i]
             v = v[::-1]
             cc = c[1:l + 1]
-            d = (int_data[i] + dot(v, cc)) % 2
+            d = (int_data[i] + np.dot(v, cc)) % 2
             if d == 1:
                 temp = copy(c)
-                p = zeros(n)
+                p = np.zeros(n)
                 for j in range(0, l):
                     if b[j] == 1:
                         p[j + i - m] = 1
@@ -767,7 +748,7 @@ class nist:
                     b = temp
             i += 1
         return l
-    
+
     def serial_test(self, binary_data:str, verbose=False, pattern_length=16, single_result=True):
         """
         From the NIST documentation http://csrc.nist.gov/publications/nistpubs/800-22-rev1a/SP800-22rev1a.pdf
@@ -784,19 +765,19 @@ class nist:
         """
         length_of_binary_data = len(binary_data)
         binary_data += binary_data[:(pattern_length -1):]
-        
+
         # Get max length one patterns for m, m-1, m-2
         max_pattern = ''
         for i in range(pattern_length + 1):
             max_pattern += '1'
-    
+
         # Step 02: Determine the frequency of all possible overlapping m-bit blocks,
         # all possible overlapping (m-1)-bit blocks and
         # all possible overlapping (m-2)-bit blocks.
-        vobs_01 = zeros(int(max_pattern[0:pattern_length:], 2) + 1)
-        vobs_02 = zeros(int(max_pattern[0:pattern_length - 1:], 2) + 1)
-        vobs_03 = zeros(int(max_pattern[0:pattern_length - 2:], 2) + 1)
-        
+        vobs_01 = np.zeros(int(max_pattern[0:pattern_length:], 2) + 1)
+        vobs_02 = np.zeros(int(max_pattern[0:pattern_length - 1:], 2) + 1)
+        vobs_03 = np.zeros(int(max_pattern[0:pattern_length - 2:], 2) + 1)
+
         for i in range(length_of_binary_data):
             # Work out what pattern is observed
             k1 = binary_data[i:i + pattern_length:]
@@ -806,9 +787,9 @@ class nist:
             vobs_02[int(''.join(k2), 2)] += 1
             vobs_03[int(''.join(k3), 2)] += 1
         vobs = [vobs_01, vobs_02, vobs_03]
-        
+
         # Step 03 Compute for ψs
-        sums = zeros(3)
+        sums = np.zeros(3)
         for i in range(3):
             for j in range(len(vobs[i])):
                 sums[i] += pow(vobs[i][j], 2)
@@ -831,13 +812,13 @@ class nist:
             print('\tP-Value 01:\t\t\t', p_value_01)
             print('\tP-Value 02:\t\t\t', p_value_02)
             print('DEBUG END.')
-        
+
         if single_result:
             smallest_p = np.minimum(p_value_01,p_value_02)
             return (smallest_p, smallest_p >= self.alpha)
         else:
             return ((p_value_01, p_value_01 >= self.alpha), (p_value_02, p_value_02 >= self.alpha))
-    
+
     def approximate_entropy_test(self, binary_data:str, verbose=False, pattern_length=10):
         """
         from the NIST documentation http://csrc.nist.gov/publications/nistpubs/800-22-rev1a/SP800-22rev1a.pdf
@@ -863,8 +844,8 @@ class nist:
             max_pattern += '1'
 
         # Keep track of each pattern's frequency (how often it appears)
-        vobs_01 = zeros(int(max_pattern[0:pattern_length:], 2) + 1)
-        vobs_02 = zeros(int(max_pattern[0:pattern_length + 1:], 2) + 1)
+        vobs_01 = np.zeros(int(max_pattern[0:pattern_length:], 2) + 1)
+        vobs_02 = np.zeros(int(max_pattern[0:pattern_length + 1:], 2) + 1)
 
         for i in range(length_of_binary_data):
             # Work out what pattern is observed
@@ -876,15 +857,15 @@ class nist:
         # Calculate the test statistics and p values
         vobs = [vobs_01, vobs_02]
 
-        sums = zeros(2)
+        sums = np.zeros(2)
         for i in range(2):
             for j in range(len(vobs[i])):
                 if vobs[i][j] > 0:
-                    sums[i] += vobs[i][j] * log(vobs[i][j] / length_of_binary_data)
+                    sums[i] += vobs[i][j] * math.log(vobs[i][j] / length_of_binary_data)
         sums /= length_of_binary_data
         ape = sums[0] - sums[1]
 
-        xObs = 2.0 * length_of_binary_data * (log(2) - ape)
+        xObs = 2.0 * length_of_binary_data * (math.log(2) - ape)
 
         p_value = gammaincc(pow(2, pattern_length - 1), xObs / 2.0)
 
@@ -898,7 +879,7 @@ class nist:
             print('DEBUG END.')
 
         return (p_value, (p_value >= self.alpha))
-    
+
     def cumulative_sums_test(self, binary_data:str, mode=0, verbose=False):
         """
         from the NIST documentation http://csrc.nist.gov/publications/nistpubs/800-22-rev1a/SP800-22rev1a.pdf
@@ -916,7 +897,7 @@ class nist:
         """
 
         length_of_binary_data = len(binary_data)
-        counts = zeros(length_of_binary_data)
+        counts = np.zeros(length_of_binary_data)
 
         # Determine whether forward or backward data
         if not mode == 0:
@@ -937,24 +918,24 @@ class nist:
         # absolute values of the partial sums Sk.
         abs_max = max(abs(counts))
 
-        start = int(floor(0.25 * floor(-length_of_binary_data / abs_max) + 1))
-        end = int(floor(0.25 * floor(length_of_binary_data / abs_max) - 1))
+        start = int(math.floor(0.25 * math.floor(-length_of_binary_data / abs_max) + 1))
+        end = int(math.floor(0.25 * math.floor(length_of_binary_data / abs_max) - 1))
 
         terms_one = []
         for k in range(start, end + 1):
-            sub = norm.cdf((4 * k - 1) * abs_max / sqrt(length_of_binary_data))
-            terms_one.append(norm.cdf((4 * k + 1) * abs_max / sqrt(length_of_binary_data)) - sub)
+            sub = norm.cdf((4 * k - 1) * abs_max / math.sqrt(length_of_binary_data))
+            terms_one.append(norm.cdf((4 * k + 1) * abs_max / math.sqrt(length_of_binary_data)) - sub)
 
-        start = int(floor(0.25 * floor(-length_of_binary_data / abs_max - 3)))
-        end = int(floor(0.25 * floor(length_of_binary_data / abs_max) - 1))
+        start = int(math.floor(0.25 * math.floor(-length_of_binary_data / abs_max - 3)))
+        end = int(math.floor(0.25 * math.floor(length_of_binary_data / abs_max) - 1))
 
         terms_two = []
         for k in range(start, end + 1):
-            sub = norm.cdf((4 * k + 1) * abs_max / sqrt(length_of_binary_data))
-            terms_two.append(norm.cdf((4 * k + 3) * abs_max / sqrt(length_of_binary_data)) - sub)
+            sub = norm.cdf((4 * k + 1) * abs_max / math.sqrt(length_of_binary_data))
+            terms_two.append(norm.cdf((4 * k + 3) * abs_max / math.sqrt(length_of_binary_data)) - sub)
 
-        p_value = 1.0 - np_sum(array(terms_one))
-        p_value += np_sum(array(terms_two))
+        p_value = 1.0 - np.sum(np.array(terms_one))
+        p_value += np.sum(np.array(terms_two))
 
         if verbose:
             print('Cumulative Sums Test DEBUG BEGIN:')
@@ -965,7 +946,7 @@ class nist:
             print('DEBUG END.')
 
         return (p_value, (p_value >= self.alpha))
- 
+
     def random_excursions_test(self, binary_data:str, verbose=False, single_result=True):
         """
         from the NIST documentation http://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-22r1a.pdf
@@ -981,7 +962,7 @@ class nist:
         length_of_binary_data = len(binary_data)
         # Form the normalized (-1, +1) sequence X in which the zeros and ones of the input sequence (ε)
         # are converted to values of –1 and +1 via X = X1, X2, … , Xn, where Xi = 2εi – 1.
-        sequence_x = zeros(length_of_binary_data)
+        sequence_x = np.zeros(length_of_binary_data)
         for i in range(len(binary_data)):
             if binary_data[i] == '0':
                 sequence_x[i] = -1.0
@@ -989,18 +970,18 @@ class nist:
                 sequence_x[i] = 1.0
 
         # Compute partial sums Si of successively larger subsequences, each starting with x1. Form the set S
-        cumulative_sum = cumsum(sequence_x)
+        cumulative_sum = np.cumsum(sequence_x)
 
         # Form a new sequence S' by attaching zeros before and after the set S. That is, S' = 0, s1, s2, … , sn, 0.
-        cumulative_sum = append(cumulative_sum, [0])
-        cumulative_sum = append([0], cumulative_sum)
+        cumulative_sum = np.append(cumulative_sum, [0])
+        cumulative_sum = np.append([0], cumulative_sum)
 
         # These are the states we are going to look at
-        x_values = array([-4, -3, -2, -1, 1, 2, 3, 4])
+        x_values = np.array([-4, -3, -2, -1, 1, 2, 3, 4])
         # index = x_values.tolist().index(state)
 
         # Identify all the locations where the cumulative sum revisits 0
-        position = where(cumulative_sum == 0)[0]
+        position = np.where(cumulative_sum == 0)[0]
         # For this identify all the cycles
         cycles = []
         for pos in range(len(position) - 1):
@@ -1011,17 +992,17 @@ class nist:
         state_count = []
         for cycle in cycles:
             # Determine the number of times each cycle visits each state
-            state_count.append(([len(where(cycle == state)[0]) for state in x_values]))
-        state_count = transpose(clip(state_count, 0, 5))
+            state_count.append(([len(np.where(cycle == state)[0]) for state in x_values]))
+        state_count = np.transpose(np.clip(state_count, 0, 5))
 
         su = []
         for cycle in range(6):
             su.append([(sct == cycle).sum() for sct in state_count])
-        su = transpose(su)
+        su = np.transpose(su)
 
         pi = ([([nist.get_pi_value(uu, state) for uu in range(6)]) for state in x_values])
-        inner_term = num_cycles * array(pi)
-        xObs = np_sum(1.0 * (array(su) - inner_term) ** 2 / inner_term, axis=1)
+        inner_term = num_cycles * np.array(pi)
+        xObs = np.sum(1.0 * (np.array(su) - inner_term) ** 2 / inner_term, axis=1)
         p_values = ([gammaincc(2.5, cs / 2.0) for cs in xObs])
 
         if verbose:
@@ -1040,7 +1021,7 @@ class nist:
         for item in p_values:
             result.append((states[count], x_values[count], xObs[count], item, (item >= self.alpha)))
             count += 1
-            
+
         if single_result:
             return result[np.argmin([i[3] for i in result])][3:]
         else:
@@ -1054,27 +1035,27 @@ class nist:
         :return:
         """
         length_of_binary_data = len(binary_data)
-        int_data = zeros(length_of_binary_data)
+        int_data = np.zeros(length_of_binary_data)
 
         for count in range(length_of_binary_data):
             int_data[count] = int(binary_data[count])
 
-        sum_int = (2 * int_data) - ones(len(int_data))
-        cumulative_sum = cumsum(sum_int)
+        sum_int = (2 * int_data) - np.ones(len(int_data))
+        cumulative_sum = np.cumsum(sum_int)
 
         li_data = []
         index = []
         for count in sorted(set(cumulative_sum)):
             if abs(count) <= 9:
                 index.append(count)
-                li_data.append([count, len(where(cumulative_sum == count)[0])])
+                li_data.append([count, len(np.where(cumulative_sum == count)[0])])
 
         j = nist.get_frequency(li_data, 0) + 1
 
         p_values = []
         for count in (sorted(set(index))):
             if not count == 0:
-                den = sqrt(2 * j * (4 * abs(count) - 2))
+                den = math.sqrt(2 * j * (4 * abs(count) - 2))
                 p_values.append(erfc(abs(nist.get_frequency(li_data, count) - j) / den))
 
         count = 0
@@ -1139,8 +1120,8 @@ class nist:
         for (x, y) in list_data:
             if x == trigger:
                 frequency = y
-        return frequency   
-        
+        return frequency
+
     def binary_matrix_rank_text(self, binary_data:str, verbose=False, rows_in_matrix = 32, columns_in_matrix = 32):
         """
         Note that this description is taken from the NIST documentation [1]
@@ -1158,7 +1139,7 @@ class nist:
         shape = (rows_in_matrix, columns_in_matrix)
         length_of_binary_data = len(binary_data)
         block_size = int(rows_in_matrix * columns_in_matrix)
-        number_of_block = floor(length_of_binary_data / block_size)
+        number_of_block = math.floor(length_of_binary_data / block_size)
         block_start = 0
         block_end = block_size
 
@@ -1167,7 +1148,7 @@ class nist:
 
             for im in range(number_of_block):
                 block = np.asarray(binary_data[block_start:block_end])
-                matrix = block.reshape(shape)         
+                matrix = block.reshape(shape)
                 rank = nist.rankMat(matrix)
 
                 if rank == rows_in_matrix:
@@ -1176,10 +1157,10 @@ class nist:
                     max_ranks[1] += 1
                 else:
                     max_ranks[2] += 1
-               
+
                 block_start += block_size
                 block_end += block_size
-            
+
             pi = [1.0, 0.0, 0.0]
             for x in range(1, 50):
                 pi[0] *= 1 - (1.0 / (2 ** x))
@@ -1188,7 +1169,7 @@ class nist:
             xObs = 0.0
             for i in range(len(pi)):
                 xObs += pow((max_ranks[i] - pi[i] * number_of_block), 2.0) / (pi[i] * number_of_block)
-            p_value = exp(-xObs / 2)
+            p_value = np.exp(-xObs / 2)
 
             if verbose:
                 print('Binary Matrix Rank Test DEBUG BEGIN:')
@@ -1205,8 +1186,8 @@ class nist:
             return (p_value, (p_value >= self.alpha))
         else:
             return (-1.0, False)
-        
-    @staticmethod       
+
+    @staticmethod
     def rankMat(A):
         # taken from https://gist.github.com/StuartGordonReid/eb59113cb29e529b8105#gistcomment-3268301
         A = A.tolist()
