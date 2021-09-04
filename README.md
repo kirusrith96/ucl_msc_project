@@ -8,5 +8,8 @@ This repo contains:
 - cirarra_test.ipynb (a notebook that shows how to use `cirarra`)
 - notebook.ipynb (a Jupyter Notebook of the exploration discussed in the paper) 
 - nist.py (a collection of algorithms from the NIST Statistical Testing Suite
-- 
+
 Full credit for the code in `nist.py` goes to the orignal author [Steven Kho Ang](https://github.com/stevenang/randomness_testsuite); some minor changes have been made to make it useable in a notebook environment).
+
+
+The word "cirarra" (சீரற்ற) means random in Tamil.
