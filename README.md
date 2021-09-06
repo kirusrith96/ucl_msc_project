@@ -3,7 +3,7 @@ A complementary repository for the dissertation of the same name by UCL Student 
 _____
 
 This repo contains:
-- `paper.pdf` (the full dissertation report)
+- `report.pdf` (the full paper)
 - `cirarra.py` (a library to generate true random numbers)
 - `cirarra_test.ipynb` (a notebook that shows how to use `cirarra`)
 - `notebook.ipynb` (a Jupyter Notebook of the exploration discussed in the paper) 
